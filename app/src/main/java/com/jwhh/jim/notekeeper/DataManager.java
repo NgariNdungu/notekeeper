@@ -35,16 +35,59 @@ public class DataManager {
                 courseInfoEntry.COLUMN_COURSE_TITLE
         };
         Cursor courseCursor = db.query(courseInfoEntry.TABLE_NAME, courseColumns, null, null, null,
-                null, null);
-
+                null, courseInfoEntry.COLUMN_COURSE_TITLE);
+        loadCoursesFromDatabase(courseCursor);
         final String[] noteColumns = {
                 noteInfoEntry.COLUMN_NOTE_TITLE,
                 noteInfoEntry.COLUMN_NOTE_TEXT,
                 noteInfoEntry.COLUMN_COURSE_ID
         };
+        String noteOrderBy = noteInfoEntry.COLUMN_COURSE_ID + ", " + noteInfoEntry.COLUMN_NOTE_TITLE;
         Cursor noteCursor = db.query(noteInfoEntry.TABLE_NAME, noteColumns,
-                null, null, null, null, null);
+                null, null, null, null, noteOrderBy);
+        loadNotesFromDatabase(noteCursor);
     }
+
+    private static void loadNotesFromDatabase(Cursor cursor) {
+        // get column positions
+        int noteTitlePos = cursor.getColumnIndex(noteInfoEntry.COLUMN_NOTE_TITLE);
+        int noteTextPos = cursor.getColumnIndex(noteInfoEntry.COLUMN_NOTE_TEXT);
+        int courseIdPos = cursor.getColumnIndex(noteInfoEntry.COLUMN_COURSE_ID);
+
+        // DataManager
+        DataManager dataManager = getInstance();
+        dataManager.mNotes.clear();
+
+        while (cursor.moveToNext()) {
+            String noteTitle = cursor.getString(noteTitlePos);
+            String noteText = cursor.getString(noteTextPos);
+            String courseId = cursor.getString(courseIdPos);
+
+            CourseInfo noteCourse = dataManager.getCourse(courseId);
+            NoteInfo note = new NoteInfo(noteCourse, noteTitle,noteText);
+            dataManager.mNotes.add(note);
+        }
+        cursor.close();
+    }
+
+    private static void loadCoursesFromDatabase(Cursor cursor) {
+        // get column positions
+        int courseIdPos = cursor.getColumnIndex(courseInfoEntry.COLUMN_COURSE_ID);
+        int courseTitlePos = cursor.getColumnIndex(courseInfoEntry.COLUMN_COURSE_TITLE);
+
+        // get instance of data manager
+        DataManager dataManager = getInstance();
+        dataManager.mCourses.clear();
+        while (cursor.moveToNext()) {
+            String courseId = cursor.getString(courseIdPos);
+            String courseTitle = cursor.getString(courseTitlePos);
+
+            CourseInfo course = new CourseInfo(courseId, courseTitle, null);
+            dataManager.mCourses.add(course);
+        }
+        cursor.close();
+    }
+
     public String getCurrentUserName() {
         return "Jim Wilson";
     }
