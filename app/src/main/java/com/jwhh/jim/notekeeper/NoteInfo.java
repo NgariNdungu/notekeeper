@@ -11,11 +11,13 @@ public final class NoteInfo implements Parcelable {
     private CourseInfo mCourse;
     private String mTitle;
     private String mText;
+    private int mId;
 
-    public NoteInfo(CourseInfo course, String title, String text) {
+    public NoteInfo(int id, CourseInfo course, String title, String text) {
         mCourse = course;
         mTitle = title;
         mText = text;
+        mId = id;
     }
 
     private NoteInfo(Parcel source) {
@@ -51,6 +53,11 @@ public final class NoteInfo implements Parcelable {
     private String getCompareKey() {
         return mCourse.getCourseId() + "|" + mTitle + "|" + mText;
     }
+
+    public int getId() {
+        return mId;
+    }
+
 
     @Override
     public boolean equals(Object o) {
