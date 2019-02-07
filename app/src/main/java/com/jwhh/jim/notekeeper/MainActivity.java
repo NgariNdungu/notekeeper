@@ -1,6 +1,9 @@
 package com.jwhh.jim.notekeeper;
 
+import android.app.LoaderManager;
+import android.content.CursorLoader;
 import android.content.Intent;
+import android.content.Loader;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -28,7 +31,7 @@ import com.jwhh.jim.notekeeper.NoteKeeperDatabaseContract.noteInfoEntry;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, LoaderManager.LoaderCallbacks<Cursor> {
     private NoteRecyclerAdapter mNoteRecyclerAdapter;
     private RecyclerView mRecyclerItems;
     private LinearLayoutManager mNotesLayoutManager;
@@ -72,22 +75,26 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onResume() {
         super.onResume();
-        loadNotes();
+        getLoaderManager().restartLoader(NoteActivity.LOADER_NOTES, null, this);
         updateNavHeader();
     }
 
-    private void loadNotes() {
-        SQLiteDatabase db = dbOpenHelper.getReadableDatabase();
+    private CursorLoader loadNotes() {
+        return new CursorLoader(this) {
+            @Override
+            public Cursor loadInBackground() {
+                SQLiteDatabase db = dbOpenHelper.getReadableDatabase();
 
-        final String[] noteColumns = {
-                noteInfoEntry.COLUMN_NOTE_TITLE,
-                noteInfoEntry.COLUMN_COURSE_ID,
-                BaseColumns._ID
+                final String[] noteColumns = {
+                        noteInfoEntry.COLUMN_NOTE_TITLE,
+                        noteInfoEntry.COLUMN_COURSE_ID,
+                        BaseColumns._ID
+                };
+                String noteOrderBy = noteInfoEntry.COLUMN_COURSE_ID + ", " + noteInfoEntry.COLUMN_NOTE_TITLE;
+                return db.query(noteInfoEntry.TABLE_NAME, noteColumns,
+                        null, null, null, null, noteOrderBy);
+            }
         };
-        String noteOrderBy = noteInfoEntry.COLUMN_COURSE_ID + ", " + noteInfoEntry.COLUMN_NOTE_TITLE;
-        Cursor noteCursor = db.query(noteInfoEntry.TABLE_NAME, noteColumns,
-                null, null, null, null, noteOrderBy);
-        mNoteRecyclerAdapter.changeCursor(noteCursor);
     }
 
     @Override
@@ -210,5 +217,25 @@ public class MainActivity extends AppCompatActivity
     private void handleSelection(int message_id) {
         View view = findViewById(R.id.list_items);
         Snackbar.make(view, message_id, Snackbar.LENGTH_LONG).show();
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        CursorLoader loader = null;
+        if (id == NoteActivity.LOADER_NOTES)
+            loader = loadNotes();
+        return loader;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        if (loader.getId() == NoteActivity.LOADER_NOTES)
+            mNoteRecyclerAdapter.changeCursor(data);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        if (loader.getId() == NoteActivity.LOADER_NOTES)
+            mNoteRecyclerAdapter.changeCursor(null);
     }
 }
