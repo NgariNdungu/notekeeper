@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.jwhh.jim.notekeeper.NoteKeeperDatabaseContract.courseInfoEntry;
 import com.jwhh.jim.notekeeper.NoteKeeperDatabaseContract.noteInfoEntry;
 
 /**
@@ -20,7 +21,7 @@ public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapte
     private final Context mContext;
     private final LayoutInflater mLayoutInflater;
     private Cursor mCursor;
-    private int mcourseIdPos;
+    private int mcourseTitlePos;
     private int mNoteTitlePos;
     private int mNoteIdPos;
 
@@ -35,7 +36,7 @@ public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapte
         if (mCursor == null) {
             return;
         }
-        mcourseIdPos = mCursor.getColumnIndex(noteInfoEntry.COLUMN_COURSE_ID);
+        mcourseTitlePos = mCursor.getColumnIndex(courseInfoEntry.COLUMN_COURSE_TITLE);
         mNoteTitlePos = mCursor.getColumnIndex(noteInfoEntry.COLUMN_NOTE_TITLE);
         mNoteIdPos = mCursor.getColumnIndex(noteInfoEntry._ID);
     }
@@ -58,7 +59,7 @@ public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapte
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         mCursor.moveToPosition(position);
-        String course = mCursor.getString(mcourseIdPos);
+        String course = mCursor.getString(mcourseTitlePos);
         String noteTitle = mCursor.getString(mNoteTitlePos);
         int id = mCursor.getInt(mNoteIdPos);
         holder.mTextCourse.setText(course);

@@ -1,5 +1,6 @@
 package com.jwhh.jim.notekeeper;
 
+import android.annotation.SuppressLint;
 import android.app.LoaderManager;
 import android.content.CursorLoader;
 import android.content.Intent;
@@ -26,6 +27,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
+import com.jwhh.jim.notekeeper.NoteKeeperDatabaseContract.courseInfoEntry;
 import com.jwhh.jim.notekeeper.NoteKeeperDatabaseContract.noteInfoEntry;
 
 import java.util.List;
@@ -79,6 +81,7 @@ public class MainActivity extends AppCompatActivity
         updateNavHeader();
     }
 
+    @SuppressLint("StaticFieldLeak")
     private CursorLoader loadNotes() {
         return new CursorLoader(this) {
             @Override
@@ -87,11 +90,15 @@ public class MainActivity extends AppCompatActivity
 
                 final String[] noteColumns = {
                         noteInfoEntry.COLUMN_NOTE_TITLE,
-                        noteInfoEntry.COLUMN_COURSE_ID,
-                        BaseColumns._ID
+                        courseInfoEntry.COLUMN_COURSE_TITLE,
+                        noteInfoEntry.getQName(noteInfoEntry._ID)
                 };
-                String noteOrderBy = noteInfoEntry.COLUMN_COURSE_ID + ", " + noteInfoEntry.COLUMN_NOTE_TITLE;
-                return db.query(noteInfoEntry.TABLE_NAME, noteColumns,
+                // note_info JOIN course_info on note_info.course_id = course_info.course_id
+                String join = noteInfoEntry.TABLE_NAME + " JOIN " + courseInfoEntry.TABLE_NAME + " ON " +
+                        noteInfoEntry.getQName(noteInfoEntry.COLUMN_COURSE_ID) + "=" +
+                        courseInfoEntry.getQName(courseInfoEntry.COLUMN_COURSE_ID);
+                String noteOrderBy = courseInfoEntry.COLUMN_COURSE_TITLE + ", " + noteInfoEntry.COLUMN_NOTE_TITLE;
+                return db.query(join, noteColumns,
                         null, null, null, null, noteOrderBy);
             }
         };

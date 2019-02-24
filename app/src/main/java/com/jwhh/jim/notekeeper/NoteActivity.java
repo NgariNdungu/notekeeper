@@ -2,11 +2,13 @@ package com.jwhh.jim.notekeeper;
 
 import android.annotation.SuppressLint;
 import android.app.LoaderManager;
+import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -148,14 +150,30 @@ public class NoteActivity extends android.support.v7.app.AppCompatActivity imple
         if(mIsCancelling) {
             Log.i(TAG, "Cancelling note at position: " + mNoteId);
             if(mIsNewNote) {
-                DataManager.getInstance().removeNote(mNoteId);
+                deleteNoteFromDatabase();
             } else {
 //                storePreviousNoteValues();
             }
         } else {
-//            saveNote();
+            saveNote();
         }
         Log.d(TAG, "onPause");
+    }
+
+    private void deleteNoteFromDatabase() {
+        final String selection = noteInfoEntry._ID + "=?";
+        final String[] selectionArgs = {Integer.toString(mNoteId)};
+
+        AsyncTask task = new AsyncTask() {
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                SQLiteDatabase db = dbOpenHelper.getWritableDatabase();
+                db.delete(noteInfoEntry.TABLE_NAME, selection, selectionArgs);
+                return null;
+            }
+        };
+        task.execute();
+
     }
 
     private void storePreviousNoteValues() {
@@ -174,9 +192,33 @@ public class NoteActivity extends android.support.v7.app.AppCompatActivity imple
     }
 
     private void saveNote() {
-        mNote.setCourse((CourseInfo) mSpinnerCourses.getSelectedItem());
-        mNote.setTitle(mTextNoteTitle.getText().toString());
-        mNote.setText(mTextNoteText.getText().toString());
+        String courseId = selectedCourseId();
+        String noteTitle = mTextNoteTitle.getText().toString();
+        String noteText = mTextNoteText.getText().toString();
+        saveNoteToDatabase(courseId, noteTitle, noteText);
+    }
+
+    private String selectedCourseId() {
+        int selectedPosition = mSpinnerCourses.getSelectedItemPosition();
+        Cursor cursor = adapterCourses.getCursor();
+        cursor.moveToPosition(selectedPosition);
+        int courseIdPos = cursor.getColumnIndex(courseInfoEntry.COLUMN_COURSE_ID);
+        return cursor.getString(courseIdPos);
+    }
+
+    private void saveNoteToDatabase(String courseId, String noteTitle, String noteText) {
+        // UPDATE note_info SET course_id = courseId, note_title = noteTitle, note_text = noteText
+        //      WHERE _ID = noteId
+        String selection = noteInfoEntry._ID + " = ?";
+        String[] selectionArgs = {Integer.toString(mNoteId)};
+
+        ContentValues values = new ContentValues();
+        values.put(courseInfoEntry.COLUMN_COURSE_ID, courseId);
+        values.put(noteInfoEntry.COLUMN_NOTE_TITLE, noteTitle);
+        values.put(noteInfoEntry.COLUMN_NOTE_TEXT, noteText);
+
+        SQLiteDatabase db = dbOpenHelper.getWritableDatabase();
+        db.update(noteInfoEntry.TABLE_NAME, values, selection, selectionArgs);
     }
 
     private void displayNote() {
@@ -224,9 +266,13 @@ public class NoteActivity extends android.support.v7.app.AppCompatActivity imple
     }
 
     private void createNewNote() {
-        DataManager dm = DataManager.getInstance();
-        mNoteId = dm.createNewNote();
-//        mNote = dm.getNotes().get(mNoteId);
+        ContentValues values = new ContentValues();
+        values.put(noteInfoEntry.COLUMN_COURSE_ID, "");
+        values.put(noteInfoEntry.COLUMN_NOTE_TITLE, "");
+        values.put(noteInfoEntry.COLUMN_NOTE_TEXT, "");
+
+        SQLiteDatabase db = dbOpenHelper.getWritableDatabase();
+        mNoteId = (int) db.insert(noteInfoEntry.TABLE_NAME, null, values);
     }
 
     @Override
