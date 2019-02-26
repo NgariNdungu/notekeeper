@@ -2,18 +2,31 @@ package com.jwhh.jim.notekeeper;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
+import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 
 import com.jwhh.jim.notekeeper.NoteKeeperDatabaseContract.courseInfoEntry;
-
-import java.sql.SQLData;
+import com.jwhh.jim.notekeeper.NoteKeeperDatabaseContract.noteInfoEntry;
+import com.jwhh.jim.notekeeper.NoteKeeperProviderContract.Courses;
+import com.jwhh.jim.notekeeper.NoteKeeperProviderContract.Notes;
 
 public class NotesProvider extends ContentProvider {
     // should contain all that is needed to perform db operations
     SQLiteOpenHelper mDbOpenHelper;
+    private static UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+
+    public static final int COURSES = 0;
+
+    public static final int NOTES = 1;
+
+    static {
+        sUriMatcher.addURI(NoteKeeperProviderContract.AUTHORITY, Courses.PATH, COURSES);
+        sUriMatcher.addURI(NoteKeeperProviderContract.AUTHORITY, Notes.PATH, NOTES);
+    }
+
     public NotesProvider() {
     }
 
@@ -49,8 +62,17 @@ public class NotesProvider extends ContentProvider {
                         String[] selectionArgs, String sortOrder) {
         Cursor cursor = null;
         SQLiteDatabase db = mDbOpenHelper.getReadableDatabase();
-        cursor = db.query(courseInfoEntry.TABLE_NAME, projection, selection, selectionArgs,
-                null, null, sortOrder);
+        switch (sUriMatcher.match(uri)) {
+            case COURSES:
+                cursor = db.query(courseInfoEntry.TABLE_NAME, projection, selection, selectionArgs,
+                        null, null, sortOrder);
+                break;
+            case NOTES:
+                cursor = db.query(noteInfoEntry.TABLE_NAME, projection, selection, selectionArgs,
+                        null, null, sortOrder);
+                break;
+        }
+
         return cursor;
     }
 

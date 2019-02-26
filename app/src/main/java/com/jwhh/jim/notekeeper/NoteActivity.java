@@ -22,6 +22,7 @@ import android.widget.Spinner;
 
 import com.jwhh.jim.notekeeper.NoteKeeperDatabaseContract.courseInfoEntry;
 import com.jwhh.jim.notekeeper.NoteKeeperDatabaseContract.noteInfoEntry;
+import com.jwhh.jim.notekeeper.NoteKeeperProviderContract.Courses;
 
 import java.net.URI;
 import java.util.List;
@@ -350,13 +351,13 @@ public class NoteActivity extends android.support.v7.app.AppCompatActivity imple
     @SuppressLint("StaticFieldLeak")
     private CursorLoader createLoaderCourses() {
         mcourseQueryFinished = false;
-        Uri uri = Uri.parse("content://com.jwhh.jim.notekeeper.provider");
+        Uri uri = Courses.CONTENT_URI;
         String[] courseColumns = {
-                courseInfoEntry.COLUMN_COURSE_TITLE,
-                courseInfoEntry.COLUMN_COURSE_ID,
-                courseInfoEntry._ID
+                Courses.COURSE_TITLE,
+                Courses.COURSE_ID,
+                Courses._ID
         };
-        return new CursorLoader(this, uri, courseColumns, null, null, courseInfoEntry.COLUMN_COURSE_TITLE);
+        return new CursorLoader(this, uri, courseColumns, null, null, Courses.COURSE_TITLE);
     }
 
     @SuppressLint("StaticFieldLeak")
