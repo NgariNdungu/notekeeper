@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -22,6 +23,7 @@ import android.widget.Spinner;
 import com.jwhh.jim.notekeeper.NoteKeeperDatabaseContract.courseInfoEntry;
 import com.jwhh.jim.notekeeper.NoteKeeperDatabaseContract.noteInfoEntry;
 
+import java.net.URI;
 import java.util.List;
 
 public class NoteActivity extends android.support.v7.app.AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -348,22 +350,13 @@ public class NoteActivity extends android.support.v7.app.AppCompatActivity imple
     @SuppressLint("StaticFieldLeak")
     private CursorLoader createLoaderCourses() {
         mcourseQueryFinished = false;
-        return new CursorLoader(this) {
-            @Override
-            public Cursor loadInBackground() {
-                SQLiteDatabase database = dbOpenHelper.getReadableDatabase();
-                String[] courseColumns = {
-                        courseInfoEntry.COLUMN_COURSE_TITLE,
-                        courseInfoEntry.COLUMN_COURSE_ID,
-                        courseInfoEntry._ID
-                };
-
-                return database.query(courseInfoEntry.TABLE_NAME, courseColumns,
-                        null,null,null,null,courseInfoEntry.COLUMN_COURSE_TITLE);
-            }
-
+        Uri uri = Uri.parse("content://com.jwhh.jim.notekeeper.provider");
+        String[] courseColumns = {
+                courseInfoEntry.COLUMN_COURSE_TITLE,
+                courseInfoEntry.COLUMN_COURSE_ID,
+                courseInfoEntry._ID
         };
-
+        return new CursorLoader(this, uri, courseColumns, null, null, courseInfoEntry.COLUMN_COURSE_TITLE);
     }
 
     @SuppressLint("StaticFieldLeak")
