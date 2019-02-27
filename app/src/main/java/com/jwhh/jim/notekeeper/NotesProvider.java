@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
+import android.provider.BaseColumns;
 
 import com.jwhh.jim.notekeeper.NoteKeeperDatabaseContract.courseInfoEntry;
 import com.jwhh.jim.notekeeper.NoteKeeperDatabaseContract.noteInfoEntry;
@@ -22,9 +23,12 @@ public class NotesProvider extends ContentProvider {
 
     public static final int NOTES = 1;
 
+    public static final int NOTES_EXPANDED = 2;
+
     static {
         sUriMatcher.addURI(NoteKeeperProviderContract.AUTHORITY, Courses.PATH, COURSES);
         sUriMatcher.addURI(NoteKeeperProviderContract.AUTHORITY, Notes.PATH, NOTES);
+        sUriMatcher.addURI(NoteKeeperProviderContract.AUTHORITY, Notes.PATH_EXPANDED, NOTES_EXPANDED);
     }
 
     public NotesProvider() {
@@ -71,9 +75,27 @@ public class NotesProvider extends ContentProvider {
                 cursor = db.query(noteInfoEntry.TABLE_NAME, projection, selection, selectionArgs,
                         null, null, sortOrder);
                 break;
+            case NOTES_EXPANDED:
+                cursor = notesExpandedQuery(db, projection, selection, selectionArgs,sortOrder);
+                break;
         }
 
         return cursor;
+    }
+
+    private Cursor notesExpandedQuery(SQLiteDatabase db, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+        String tablesWithJoin = noteInfoEntry.TABLE_NAME + " JOIN " + courseInfoEntry.TABLE_NAME +
+                " ON " + noteInfoEntry.getQName(noteInfoEntry.COLUMN_COURSE_ID) +
+                " = " + courseInfoEntry.getQName(courseInfoEntry.COLUMN_COURSE_ID);
+
+        String[] columns = new String[projection.length];
+        for (int idx = 0; idx < projection.length; idx++){
+            columns[idx] = projection[idx].equals(BaseColumns._ID) ||
+                    projection[idx].equals(courseInfoEntry.COLUMN_COURSE_ID) ?
+                    noteInfoEntry.getQName("_id"): projection[idx];
+        }
+        return db.query(tablesWithJoin, columns, selection, selectionArgs,
+                null, null, sortOrder);
     }
 
     @Override

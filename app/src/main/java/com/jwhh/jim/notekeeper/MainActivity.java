@@ -2,12 +2,14 @@ package com.jwhh.jim.notekeeper;
 
 import android.annotation.SuppressLint;
 import android.app.LoaderManager;
+import android.content.ContentProvider;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
@@ -29,6 +31,8 @@ import android.widget.TextView;
 
 import com.jwhh.jim.notekeeper.NoteKeeperDatabaseContract.courseInfoEntry;
 import com.jwhh.jim.notekeeper.NoteKeeperDatabaseContract.noteInfoEntry;
+import com.jwhh.jim.notekeeper.NoteKeeperProviderContract.Courses;
+import com.jwhh.jim.notekeeper.NoteKeeperProviderContract.Notes;
 
 import java.util.List;
 
@@ -83,25 +87,15 @@ public class MainActivity extends AppCompatActivity
 
     @SuppressLint("StaticFieldLeak")
     private CursorLoader loadNotes() {
-        return new CursorLoader(this) {
-            @Override
-            public Cursor loadInBackground() {
-                SQLiteDatabase db = dbOpenHelper.getReadableDatabase();
+        Uri uri = Notes.CONTENT_EXPANDED_URI;
 
-                final String[] noteColumns = {
-                        noteInfoEntry.COLUMN_NOTE_TITLE,
-                        courseInfoEntry.COLUMN_COURSE_TITLE,
-                        noteInfoEntry.getQName(noteInfoEntry._ID)
-                };
-                // note_info JOIN course_info on note_info.course_id = course_info.course_id
-                String join = noteInfoEntry.TABLE_NAME + " JOIN " + courseInfoEntry.TABLE_NAME + " ON " +
-                        noteInfoEntry.getQName(noteInfoEntry.COLUMN_COURSE_ID) + "=" +
-                        courseInfoEntry.getQName(courseInfoEntry.COLUMN_COURSE_ID);
-                String noteOrderBy = courseInfoEntry.COLUMN_COURSE_TITLE + ", " + noteInfoEntry.COLUMN_NOTE_TITLE;
-                return db.query(join, noteColumns,
-                        null, null, null, null, noteOrderBy);
-            }
+        final String[] noteColumns = {
+                Notes.NOTE_TITLE,
+                Courses.COURSE_TITLE,
+                Notes._ID
         };
+        String noteOrderBy = courseInfoEntry.COLUMN_COURSE_TITLE + ", " + noteInfoEntry.COLUMN_NOTE_TITLE;
+        return new CursorLoader(this, uri, noteColumns, null, null, noteOrderBy);
     }
 
     @Override
