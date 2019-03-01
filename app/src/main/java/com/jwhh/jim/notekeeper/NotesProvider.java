@@ -1,6 +1,8 @@
 package com.jwhh.jim.notekeeper;
 
 import android.content.ContentProvider;
+import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
@@ -15,6 +17,8 @@ import com.jwhh.jim.notekeeper.NoteKeeperProviderContract.Courses;
 import com.jwhh.jim.notekeeper.NoteKeeperProviderContract.Notes;
 
 public class NotesProvider extends ContentProvider {
+    public static final String MIME_VENDOR_TYPE = "vnd." + NoteKeeperProviderContract.AUTHORITY +
+            ".";
     // should contain all that is needed to perform db operations
     SQLiteOpenHelper mDbOpenHelper;
     private static UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
@@ -25,10 +29,13 @@ public class NotesProvider extends ContentProvider {
 
     public static final int NOTES_EXPANDED = 2;
 
+    public static final int NOTES_ROW = 3;
+
     static {
         sUriMatcher.addURI(NoteKeeperProviderContract.AUTHORITY, Courses.PATH, COURSES);
         sUriMatcher.addURI(NoteKeeperProviderContract.AUTHORITY, Notes.PATH, NOTES);
         sUriMatcher.addURI(NoteKeeperProviderContract.AUTHORITY, Notes.PATH_EXPANDED, NOTES_EXPANDED);
+        sUriMatcher.addURI(NoteKeeperProviderContract.AUTHORITY, Notes.PATH + "/#", NOTES_ROW);
     }
 
     public NotesProvider() {
@@ -36,21 +43,71 @@ public class NotesProvider extends ContentProvider {
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
-        // Implement this to handle requests to delete one or more rows.
-        throw new UnsupportedOperationException("Not yet implemented");
+        int deletedRows = -1;
+        int uriMatch = sUriMatcher.match(uri);
+        SQLiteDatabase db = mDbOpenHelper.getWritableDatabase();
+        switch (uriMatch) {
+            case NOTES:
+                deletedRows = db.delete(noteInfoEntry.TABLE_NAME, selection, selectionArgs);
+                break;
+            case COURSES:
+                deletedRows = db.delete(courseInfoEntry.TABLE_NAME, selection, selectionArgs);
+                break;
+            case NOTES_ROW:
+                String noteSelection = noteInfoEntry._ID + "=?";
+                String[] selectionId = {String.valueOf(ContentUris.parseId(uri))};
+                deletedRows = db.delete(noteInfoEntry.TABLE_NAME, noteSelection, selectionId);
+                break;
+            case NOTES_EXPANDED:
+                throw new UnsupportedOperationException("Delete not supported, read only table");
+        }
+
+        return deletedRows;
     }
 
     @Override
     public String getType(Uri uri) {
-        // TODO: Implement this to handle requests for the MIME type of the data
-        // at the given URI.
-        throw new UnsupportedOperationException("Not yet implemented");
+        String mimeType = null;
+        int uriMatch = sUriMatcher.match(uri);
+
+        switch (uriMatch) {
+            case NOTES:
+                mimeType = ContentResolver.CURSOR_DIR_BASE_TYPE + "/" +
+                        MIME_VENDOR_TYPE + Notes.PATH;
+                break;
+            case COURSES:
+                mimeType = ContentResolver.CURSOR_DIR_BASE_TYPE + "/" +
+                        MIME_VENDOR_TYPE + Courses.PATH;
+                break;
+            case NOTES_EXPANDED:
+                mimeType = ContentResolver.CURSOR_DIR_BASE_TYPE + "/" +
+                        MIME_VENDOR_TYPE + Notes.PATH_EXPANDED;
+                break;
+            case NOTES_ROW:
+                mimeType = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" +
+                        MIME_VENDOR_TYPE + Notes.PATH;
+        }
+        return mimeType;
     }
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
-        // TODO: Implement this to handle requests to insert a new row.
-        throw new UnsupportedOperationException("Not yet implemented");
+        SQLiteDatabase db = mDbOpenHelper.getWritableDatabase();
+        long rowId = -1;
+        Uri rowUri = null;
+        switch (sUriMatcher.match(uri)) {
+            case NOTES:
+                rowId = db.insert(noteInfoEntry.TABLE_NAME, null, values);
+                rowUri = ContentUris.withAppendedId(Notes.CONTENT_URI, rowId);
+                break;
+            case COURSES:
+                rowId = db.insert(courseInfoEntry.TABLE_NAME, null, values);
+                rowUri = ContentUris.withAppendedId(Courses.CONTENT_URI, rowId);
+                break;
+            case NOTES_EXPANDED:
+                throw new UnsupportedOperationException("Cannot insert, table is read only");
+        }
+        return rowUri;
     }
 
     @Override
@@ -78,6 +135,12 @@ public class NotesProvider extends ContentProvider {
             case NOTES_EXPANDED:
                 cursor = notesExpandedQuery(db, projection, selection, selectionArgs,sortOrder);
                 break;
+            case NOTES_ROW:
+                String selectRow = noteInfoEntry._ID + "=?";
+                String[] args = {String.valueOf(ContentUris.parseId(uri))};
+                cursor = db.query(noteInfoEntry.TABLE_NAME, projection, selectRow, args,
+                        null, null, null);
+                break;
         }
 
         return cursor;
@@ -101,7 +164,24 @@ public class NotesProvider extends ContentProvider {
     @Override
     public int update(Uri uri, ContentValues values, String selection,
                       String[] selectionArgs) {
-        // TODO: Implement this to handle requests to update one or more rows.
-        throw new UnsupportedOperationException("Not yet implemented");
+        SQLiteDatabase db = mDbOpenHelper.getWritableDatabase();
+        int updatedRows = -1;
+        int uriMatch = sUriMatcher.match(uri);
+        switch (uriMatch) {
+            case NOTES:
+                updatedRows = db.update(noteInfoEntry.TABLE_NAME, values, selection, selectionArgs);
+                break;
+            case COURSES:
+                updatedRows = db.update(courseInfoEntry.TABLE_NAME, values, selection, selectionArgs);
+                break;
+            case NOTES_ROW:
+                String noteSelection = noteInfoEntry._ID + "=?";
+                String[] noteIdArg = {String.valueOf(ContentUris.parseId(uri))};
+                updatedRows = db.update(noteInfoEntry.TABLE_NAME, values, noteSelection, noteIdArg);
+                break;
+            case NOTES_EXPANDED:
+                throw new UnsupportedOperationException("Update not supported, read only table");
+        }
+        return updatedRows;
     }
 }
