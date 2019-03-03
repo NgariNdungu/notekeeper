@@ -82,6 +82,7 @@ public class MainActivity extends AppCompatActivity
     protected void onResume() {
         super.onResume();
         getLoaderManager().restartLoader(NoteActivity.LOADER_NOTES, null, this);
+//        NoteReminderNotification.cancel(this);
         updateNavHeader();
     }
 

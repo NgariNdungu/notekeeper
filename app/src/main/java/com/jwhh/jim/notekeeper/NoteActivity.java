@@ -2,6 +2,7 @@ package com.jwhh.jim.notekeeper;
 
 import android.annotation.SuppressLint;
 import android.app.LoaderManager;
+import android.app.Notification;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -13,6 +14,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
@@ -298,9 +300,18 @@ public class NoteActivity extends android.support.v7.app.AppCompatActivity imple
             finish();
         } else if(id == R.id.action_next) {
             moveNext();
+        } else if(id == R.id.action_set_reminder) {
+            setReminderNotification();
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void setReminderNotification() {
+        String noteText = String.valueOf(mTextNoteText.getText());
+        String noteTitle = mTextNoteTitle.getText().toString();
+        int noteId = (int) ContentUris.parseId(mNoteUri);
+        NoteReminderNotification.notify(this, noteText, noteTitle, noteId);
     }
 
     @Override
